@@ -15,12 +15,12 @@ GUILD_ID = 1446301256913256510
 
 LOG_CHANNEL = 1467395713435697358
 
-MEMORY_FILEPATH = "./mem/moderator/mod.json"
+MEMORY_FILEPATH = "./data/mod.json"
 Memory = {}
 
 if os.path.exists(MEMORY_FILEPATH):
     with open(MEMORY_FILEPATH, "r") as f:  # <-- use open(), not os.open()
-        Memory = jsodfn.load(f)
+        Memory = json.load(f)
 
 @bot.event
 async def on_ready():
