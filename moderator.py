@@ -20,7 +20,7 @@ Memory = {}
 
 if os.path.exists(MEMORY_FILEPATH):
     with open(MEMORY_FILEPATH, "r") as f:  # <-- use open(), not os.open()
-        Memory = json.load(f)
+        Memory = jsodfn.load(f)
 
 @bot.event
 async def on_ready():
