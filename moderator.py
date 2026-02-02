@@ -15,12 +15,23 @@ GUILD_ID = 1446301256913256510
 
 LOG_CHANNEL = 1467395713435697358
 
-MEMORY_FILEPATH = "./data/mod.json"
+MEMORY_FILEPATH = "./data/mem.json"
+TRIGGERWORDS_FILEPATH = "./data/triggerwords.json"
 Memory = {}
-
+Triggerwords = {}
 if os.path.exists(MEMORY_FILEPATH):
     with open(MEMORY_FILEPATH, "r") as f:  # <-- use open(), not os.open()
         Memory = json.load(f)
+
+if os.path.exists(TRIGGERWORDS_FILEPATH):
+    with open(TRIGGERWORDS_FILEPATH, "r") as f:  # <-- use open(), not os.open()
+        Triggerwords = json.load(f)
+
+async def tell_off_offending_user(user: discord.User, word: str, category: str, msg: str):
+    if not user.dm_channel:
+        await user.create_dm()
+    if category == "absolute_worst":
+        await user.dm_channel.send(f"# Your message could not be sent.\nYour message that read as follows:\n >{msg}\nCould not be sent as it contains content telling someone to kill themselves. example: {word}. Words like that have no place on the internet.\n-# if you belive this is a mistake, please contact the owner of the server. Thank you.")
 
 @bot.event
 async def on_ready():
@@ -29,6 +40,38 @@ async def on_ready():
     await bot.tree.sync(guild=guild)
     print(f"Logged in as {bot.user} and commands synced!")
 
+@bot.event
+async def on_message(msg: discord.Message):
+    txt = msg.content
+    channel = msg.channel
+    if not msg.author.bot:
+        for word in Triggerwords["absolute_worst"]:
+            if word.lower() in txt.lower():
+                author = msg.author
+                await msg.delete()
+                await tell_off_offending_user(author, word, "absolute_worst", txt)
+                await channel.send(f"a message from {author.mention} was deleted by {bot.user.mention}.")
+
+
+@bot.tree.command(
+    guild=discord.Object(id=GUILD_ID),
+    name="clearbotdms",
+    description="Clears all DMs between you and the bot"
+)
+async def clear_bot_dms(interaction: discord.Interaction):
+    if not interaction.user.dm_channel:
+        await interaction.user.create_dm()
+
+    async for msg in interaction.user.dm_channel.history(limit=None):
+        if msg.author == bot.user:
+            try:
+                await msg.delete()
+            except discord.Forbidden:
+                pass  # can't delete, maybe too old or permissions
+
+    await interaction.response.send_message(
+        "✅ Cleared all bot DMs with you.", ephemeral=True
+    )
 
 
 @bot.tree.command(
