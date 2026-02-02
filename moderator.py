@@ -4,6 +4,8 @@ import json
 from discord.ext import commands
 from datetime import datetime, timedelta
 
+UPDATE_LOG = "Moderator v1.0.0 beta by Morxe0 \nAdded permission checking on '/kill', '/revive', and '/put_to_sleep'."
+
 # CONTENT WARNING: the following moderation script may reference words that are extremely harmful in social contexts for the pure purpose of moderation. if you feel triggered by any of the content, speak to someone about it.
 
 intents = discord.Intents.default()
@@ -11,9 +13,21 @@ intents.members = True  # Required for member events
 intents.message_content = True  # Required to read message content
 
 bot = commands.Bot(command_prefix='!', intents=intents)
-GUILD_ID = 1446301256913256510
 
-LOG_CHANNEL = 1467395713435697358
+guild = "./GUILD.json" #make your own guild.json, "id" is the guild id, "LOG" is the server log channel
+
+if os.path.exists(guild):
+    with open(guild, "r") as f:
+        fil = json.load(f)
+        GUILD_ID = fil["id"]
+        LOG_CHANNEL = fil["LOG"]
+
+k = "./ACCESS_KEY.txt" #discord access id
+KEY = ""
+if os.path.exists(k):
+    with open(k, "r") as f:
+        KEY = f.readlines()[0].strip()
+print(repr(KEY))
 
 MEMORY_FILEPATH = "./data/mem.json"
 TRIGGERWORDS_FILEPATH = "./data/triggerwords.json"
@@ -77,13 +91,16 @@ async def clear_bot_dms(interaction: discord.Interaction):
 @bot.tree.command(
     name="kill",
     description="Kill a user(bans them).\nCan only be used by those with moderator permissions",
-    guild=discord.Object(id=GUILD_ID)
+    guild=discord.Object(id=GUILD_ID),
 )
 async def kill(
     interaction: discord.Interaction,
     user: discord.Member, # The person to kill
     why: discord.Optional[str] = None
 ):
+    if not interaction.user.guild_permissions.ban_members:
+        await interaction.response.send_message("you don't have permission to ban other users.", ephemeral=True)
+        return
     try:
         await user.ban(reason=why or "")
         await interaction.guild.get_channel(LOG_CHANNEL).send(f"{user.display_name} was banned")
@@ -101,6 +118,9 @@ async def revive(
     user: discord.User,
     send_invite: discord.Optional[bool] = True
 ):
+    if not interaction.user.guild_permissions.ban_members:
+        await interaction.response.send_message("you don't have permission to unban other users.", ephemeral=True)
+        return
     try:
         await interaction.guild.unban(user=user)
         await interaction.guild.get_channel(LOG_CHANNEL).send(f"{user.display_name} was unbanned")
@@ -140,13 +160,38 @@ async def put_to_sleep(
     user: discord.Member, # who to timeout
     time: float # how long
 ):
+    if not interaction.user.guild_permissions.moderate_members:
+        await interaction.response.send_message(
+            "You do not have permission to timeout other users.",
+            ephemeral=True
+        )
+        return
+
     try:
-        future_time = datetime.now() + timedelta(seconds=123.456)
+        future_time = datetime.now() + timedelta(seconds=time)
         await user.timeout(future_time)
         await interaction.response.send_message(f"put {user.display_name} to sleep for {str(time)} seconds")
         await interaction.guild.get_channel(LOG_CHANNEL).send(f"{user} was timed out/put to sleep for {str(time)}")
     except discord.Forbidden:
         await interaction.response.send_message(f"could not put {user.display_name} to sleep")
 
+@bot.tree.command(
+    name="getupdatelog",
+    description="Get the update log of Moderator by Morxe0",
+    guild=discord.Object(id=GUILD_ID)
+)
+async def getupdatelog(interaction: discord.Interaction):
+    if not interaction.user.dm_channel:
+        await interaction.user.create_dm()
 
-bot.run("MTQ2NzM2MDU4OTA5MjQ5MTM0Ng.GxW5k_.jdxgEyxtdmECCEPm7USGUHi47Tems_ge34PYt4")
+    await interaction.user.dm_channel.send(UPDATE_LOG)
+
+    await interaction.response.send_message(
+        "I've sent you the update log in DMs.",
+        ephemeral=True
+    )
+
+try:
+    bot.run(KEY)
+except:
+    print("failed")
