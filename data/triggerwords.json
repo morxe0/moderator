@@ -1,18 +1,26 @@
 {
     "absolute_worst": [
         "kys",
-        "kill yourself"
+        "kill yourself",
+        "k1ll y0urs3lf",
+        "ky5",
+        "k y s"
     ],
     "very_very_bad": [
         "retard",
+        "r3tard",
         "whore",
+        "wh0re",
         "nigger",
+        "n1gger",
+        "nigga",
         "slut"
     ],
     "bad": [
         "moron",
         "bastard",
         "dick",
+        "d1ck",
         "cunt"
     ]
 }

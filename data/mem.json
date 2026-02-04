@@ -1,14 +1,6 @@
 {
-    "example_user": {
-        "offenses": [
-            {
-                "reason": "spammed",
-                "message_content": "spam",
-                "expired": false,
-                "timestamp": 0,
-                "vanilla_affect": 0
-            }
-        ],
-        "trust_score": 1
-    }
+     "1467360589092491346": {
+          "offenses": [],
+          "trust_score": 1.0
+     }
 }

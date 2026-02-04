@@ -1,6 +1,7 @@
 import discord
 import os
 import json
+import time
 from discord.ext import commands
 from datetime import datetime, timedelta
 
@@ -37,15 +38,50 @@ if os.path.exists(MEMORY_FILEPATH):
     with open(MEMORY_FILEPATH, "r") as f:  # <-- use open(), not os.open()
         Memory = json.load(f)
 
+def _save():
+    with open(MEMORY_FILEPATH, "w") as f:
+        json.dump(Memory, f, indent=5)
+
+def create_mem_(user: discord.Member):
+    Memory[str(user.id)] = {}
+    Memory[str(user.id)]["offenses"] = []
+    Memory[str(user.id)]["trust_score"] = 1.0
+    _save()
+
+def calc_trust_score(offenses: list):
+    trust = 1.0
+
+    for offense in offenses:
+        age = time.time() - offense["ts"]
+        weeks = age // 604800
+        decay = weeks * 0.1
+
+        impact = max(0, offense["trust_score_impact"] - decay)
+        trust -= impact
+
+    return max(0.0, min(1.0, trust))
+
+
+
 if os.path.exists(TRIGGERWORDS_FILEPATH):
     with open(TRIGGERWORDS_FILEPATH, "r") as f:  # <-- use open(), not os.open()
         Triggerwords = json.load(f)
 
-async def tell_off_offending_user(user: discord.User, word: str, category: str, msg: str):
+async def tell_off_offending_user(user: discord.Member, word: str, category: str, msg: str):
     if not user.dm_channel:
         await user.create_dm()
     if category == "absolute_worst":
         await user.dm_channel.send(f"# Your message could not be sent.\nYour message that read as follows:\n >{msg}\nCould not be sent as it contains content telling someone to kill themselves. example: {word}. Words like that have no place on the internet.\n-# if you belive this is a mistake, please contact the owner of the server. Thank you.")
+        o: list = Memory[str(user.id)]["offenses"]
+        o.append({
+            "trust_score_impact": 0.5,
+            "ts": time.time(),
+            "reason": "Said extremely bad word(s).",
+            "issuer": bot.user.display_name
+        })
+        Memory[str(user.id)]["offenses"] = o
+        Memory[str(user.id)]["trust_score"] = calc_trust_score(o)
+        _save()
 
 @bot.event
 async def on_ready():
@@ -55,7 +91,14 @@ async def on_ready():
     print(f"Logged in as {bot.user} and commands synced!")
 
 @bot.event
+async def on_member_join(member):
+    create_mem_(member)
+
+
+@bot.event
 async def on_message(msg: discord.Message):
+    if str(msg.author.id) not in Memory:
+        create_mem_(msg.author)
     txt = msg.content
     channel = msg.channel
     if not msg.author.bot:
@@ -107,7 +150,15 @@ async def kill(
         await interaction.response.send_message("killed", ephemeral=True)
     except discord.Forbidden:
         await interaction.response.send_message("Could not kill", ephemeral=True)
-
+@bot.tree.command(name="recalculatetrust", description="recalculate your trust score", guild=discord.Object(id=GUILD_ID))
+async def recalculatetrust(
+    interaction: discord.Interaction
+):
+    usr = interaction.user
+    off = Memory[str(usr.id)]["offenses"]
+    ts = calc_trust_score(off)
+    Memory[str(usr.id)]["trust_score"] = ts
+    await interaction.response.send_message(f"{usr.mention}, your trust score is {str(ts)}.")
 @bot.tree.command(
     name="revive",
     description="Uhh... hire a necromancer or smth for this one folks",
@@ -191,7 +242,4 @@ async def getupdatelog(interaction: discord.Interaction):
         ephemeral=True
     )
 
-try:
-    bot.run(KEY)
-except:
-    print("failed")
+bot.run(KEY)
