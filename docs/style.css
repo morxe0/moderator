@@ -1,0 +1,26 @@
+@font-face {
+    src: url("./RES/Libre_Baskerville/LibreBaskerville-VariableFont_wght.ttf");
+    font-family: 'default_font'
+}
+
+body {
+    background-color: rgb(255, 185, 197);
+    color: rgb(49, 0, 49);
+    font-family: 'default_font'
+}
+
+header {
+    background-color: purple;
+    text-align: center;
+    padding: 1.5em;
+    margin: auto;
+    width: 70%
+}
+
+h1 {
+    font-style: bold;
+}
+
+p {
+    font-size: 1.8em;
+}

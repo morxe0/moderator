@@ -28,7 +28,6 @@ KEY = ""
 if os.path.exists(k):
     with open(k, "r") as f:
         KEY = f.readlines()[0].strip()
-print(repr(KEY))
 
 MEMORY_FILEPATH = "./data/mem.json"
 TRIGGERWORDS_FILEPATH = "./data/triggerwords.json"
