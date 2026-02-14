@@ -9,4 +9,6 @@ Moderator is quite simple to set up. Here are the steps:
 4. use the setup wizard in your-unzipped-moderator-folder/docs/setup.html
 
 It is unrecommended for you to modify the moderator.py file without knowing what you are doing.
+
+# MODERATOR IS UNFINISHED.
 ### Morxe0 &copy; 2026
